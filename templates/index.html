@@ -126,7 +126,7 @@
         .entropy-medium { color: #f39c12; }
         .entropy-low { color: #27ae60; }
         
-        /* Améliorations de mise en page */
+        /* Layout improvements */
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -271,7 +271,7 @@
                     <div class="upload-zone" id="uploadZone">
                         <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
                         <h4 class="mt-3 text-muted">Drag and drop your files or folders here</h4>
-                        <p class="text-muted">or use thses buttons </p>
+                        <p class="text-muted">or use these buttons </p>
                         <input type="file" id="fileInput" multiple accept="*" style="display: none;">
                         <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
                         <div class="d-flex gap-2 justify-content-center mt-3">
@@ -305,7 +305,7 @@
             <div class="stats-overview">
                 <h6 class="section-title">
                     <i class="bi bi-graph-up me-2"></i>
-                    Vue d'Ensemble
+                    Overview
                 </h6>
                 <div class="compact-stats">
                     <div class="stat-item">
@@ -318,11 +318,11 @@
                     </div>
                     <div class="stat-item">
                         <div class="stat-value text-warning" id="avgScore">0</div>
-                        <div class="stat-label">Score Moyen</div>
+                        <div class="stat-label">Average Score</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-value text-info" id="highEntropyFiles">0</div>
-                        <div class="stat-label">Entropie Élevée</div>
+                        <div class="stat-label">High Entropy</div>
                     </div>
                 </div>
             </div>
@@ -339,7 +339,7 @@
                         <canvas id="levelChart"></canvas>
                     </div>
                     <div class="chart-card">
-                        <h6 class="mb-3 text-center">Extensions Suspectes</h6>
+                        <h6 class="mb-3 text-center">Suspicious Extensions</h6>
                         <canvas id="extensionChart"></canvas>
                     </div>
                 </div>
@@ -358,7 +358,7 @@
                         <i class="bi bi-sort-numeric-down"></i> Score
                     </button>
                     <button class="btn btn-outline-light btn-sm" onclick="sortResults('name')">
-                        <i class="bi bi-sort-alpha-down"></i> Nom
+                        <i class="bi bi-sort-alpha-down"></i> Name
                     </button>
                     <button class="btn btn-outline-light btn-sm" onclick="exportResults()">
                         <i class="bi bi-download"></i> Export
@@ -372,15 +372,15 @@
                             <th>Level</th>
                             <th>File</th>
                             <th>Score</th>
-                            <th>Taille</th>
-                            <th>Entropie</th>
+                            <th>Size</th>
+                            <th>Entropy</th>
                             <th>Extension</th>
-                            <th>Raisons</th>
+                            <th>Reasons</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="resultsTableBody">
-                        <!-- Les résultats seront injectés ici -->
+                        <!-- Results will be injected here -->
                     </tbody>
                 </table>
             </div>
@@ -399,7 +399,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="fileDetailsContent">
-                    <!-- Contenu détaillé du fichier -->
+                    <!-- Detailed file content -->
                 </div>
             </div>
         </div>
@@ -518,19 +518,19 @@
                 }
                 
                 if (!hasFiles) {
-                    showAlert('Aucun fichier valide sélectionné', 'warning');
+                    showAlert('No valid files selected', 'warning');
                     hideProgress();
                     return;
                 }
                 
-                console.log('Envoi des fichiers...');
+                console.log('Sending files...');
                 
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
 
-                console.log('Réponse reçue:', response.status);
+                console.log('Response received:', response.status);
                 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -538,18 +538,18 @@
                 }
 
                 const data = await response.json();
-                console.log('Données:', data);
+                console.log('Data:', data);
 
                 if (data.success) {
                     currentResults = data.results;
                     displayResults(data.results, data.summary);
                     showAlert(`Analysis completed! ${data.results.length} files processed.`, 'success');
                 } else {
-                    showAlert(data.error || 'Erreur lors de l\'analyse', 'danger');
+                    showAlert(data.error || 'Analysis error', 'danger');
                 }
             } catch (error) {
-                console.error('Erreur complète:', error);
-                showAlert(`Erreur: ${error.message}`, 'danger');
+                console.error('Complete error:', error);
+                showAlert(`Error: ${error.message}`, 'danger');
             } finally {
                 hideProgress();
             }
@@ -672,7 +672,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Nombre de fichiers',
+                        label: 'Number of files',
                         data: data,
                         backgroundColor: '#f39c12',
                         borderColor: '#e67e22',
@@ -780,11 +780,11 @@
             content.innerHTML = `
                 <div class="row">
                     <div class="col-md-6">
-                        <h6><i class="bi bi-info-circle me-2"></i>Informations Générales</h6>
+                        <h6><i class="bi bi-info-circle me-2"></i>General Information</h6>
                         <table class="table table-sm">
-                            <tr><td><strong>Nom:</strong></td><td>${file.name}</td></tr>
-                            <tr><td><strong>Chemin:</strong></td><td><small>${file.path}</small></td></tr>
-                            <tr><td><strong>Taille:</strong></td><td>${(file.size || 0).toLocaleString()} bytes</td></tr>
+                            <tr><td><strong>Name:</strong></td><td>${file.name}</td></tr>
+                            <tr><td><strong>Path:</strong></td><td><small>${file.path}</small></td></tr>
+                            <tr><td><strong>Size:</strong></td><td>${(file.size || 0).toLocaleString()} bytes</td></tr>
                             <tr><td><strong>Extension:</strong></td><td>.${file.extension || 'unknown'}</td></tr>
                             <tr><td><strong>SHA-256:</strong></td><td><small>${file.sha256 || 'N/A'}</small></td></tr>
                         </table>
@@ -807,9 +807,9 @@
                     <div class="col-12">
                         <h6><i class="bi bi-clock me-2"></i>Timestamps</h6>
                         <table class="table table-sm">
-                            <tr><td><strong>Créé:</strong></td><td>${new Date(file.timestamps.created).toLocaleString()}</td></tr>
-                            <tr><td><strong>Modifié:</strong></td><td>${new Date(file.timestamps.modified).toLocaleString()}</td></tr>
-                            <tr><td><strong>Accédé:</strong></td><td>${new Date(file.timestamps.accessed).toLocaleString()}</td></tr>
+                            <tr><td><strong>Created:</strong></td><td>${new Date(file.timestamps.created).toLocaleString()}</td></tr>
+                            <tr><td><strong>Modified:</strong></td><td>${new Date(file.timestamps.modified).toLocaleString()}</td></tr>
+                            <tr><td><strong>Accessed:</strong></td><td>${new Date(file.timestamps.accessed).toLocaleString()}</td></tr>
                         </table>
                     </div>
                 </div>
@@ -817,7 +817,7 @@
                 
                 <div class="row mt-3">
                     <div class="col-12">
-                        <h6><i class="bi bi-exclamation-triangle me-2"></i>Raisons de Classification</h6>
+                        <h6><i class="bi bi-exclamation-triangle me-2"></i>Classification Reasons</h6>
                         <ul class="list-group list-group-flush">
                             ${(file.reasons || []).map(reason => 
                                 `<li class="list-group-item px-0">${reason}</li>`

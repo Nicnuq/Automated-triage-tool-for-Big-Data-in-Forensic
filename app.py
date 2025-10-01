@@ -1,14 +1,3 @@
-"""
-Système de Triage Forensique - Digital Forensics File Classification
-Basé sur les recherches académiques et les meilleures pratiques de l'industrie
-
-Architecture:
-- Backend: Flask (Python)
-- Classification: Métadonnées + Analyse de contenu
-- Scoring: Système 5 niveaux inspiré de Cyber Triage
-- Validation: Critères evidence-based de la recherche
-"""
-
 import os
 import hashlib
 import magic
@@ -81,7 +70,7 @@ class ForensicScorer:
         'pst', 'ost', 'edb', 'log', 'evtx', 'reg', 'dat', 'sqlite', 'db'
     }
     
-    # Mots-clés suspects dans les noms de fichiers
+    # Suspicious keywords in files
     SUSPICIOUS_KEYWORDS = {
         'password', 'crack', 'hack', 'exploit', 'backdoor', 'trojan',
         'virus', 'malware', 'keylog', 'steganography', 'hidden'
