@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Forensics Triage System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --success-color: #27ae60;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), #34495e);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .upload-zone {
+            border: 3px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-zone:hover {
+            border-color: var(--primary-color);
+            background: #f8f9fa;
+        }
+        
+        .upload-zone.dragover {
+            border-color: var(--info-color);
+            background: #e3f2fd;
+        }
+        
+        .level-bad { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .level-suspicious { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .level-unknown { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .level-notable { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .level-good { background: linear-gradient(135deg, #27ae60, #229954); }
+        
+        .level-badge {
+            color: white;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .progress {
+            height: 25px;
+            border-radius: 12px;
+            background: #e9ecef;
+        }
+        
+        .progress-bar {
+            border-radius: 12px;
+            transition: width 0.6s ease;
+        }
+        
+        .file-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .file-row:hover {
+            background: #f8f9fa;
+        }
+        
+        .stats-card {
+            background: white;
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 10px;
+        }
+        
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .entropy-high { color: #e74c3c; font-weight: bold; }
+        .entropy-medium { color: #f39c12; }
+        .entropy-low { color: #27ae60; }
+        
+        /* Améliorations de mise en page */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, var(--primary-color), #34495e);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px 10px 0 0;
+            margin-bottom: 0;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-overview {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .charts-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .results-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .compact-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .chart-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .upload-zone { padding: 20px; }
+            .compact-stats {
+                grid-template-columns: 1fr;
+            }
+            .main-container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-shield-check me-2"></i>
+                Digital Forensics Triage System
+            </span>
+            <span class="navbar-text">
+                <small>Evidence-Based File Classification</small>
+            </span>
+        </div>
+    </nav>
+
+    <div class="main-container mt-4">
+        <!-- Section Upload -->
+        <div class="mb-4">
+            <div class="card">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-upload me-2"></i>
+                        File Upload and Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="upload-zone" id="uploadZone">
+                        <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+                        <h4 class="mt-3 text-muted">Drag and drop your files or folders here</h4>
+                        <p class="text-muted">or use thses buttons </p>
+                        <input type="file" id="fileInput" multiple accept="*" style="display: none;">
+                        <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+                        <div class="d-flex gap-2 justify-content-center mt-3">
+                            <button class="btn btn-primary" onclick="selectFiles()">
+                                <i class="bi bi-file-earmark me-2"></i>
+                                Select Files
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="selectFolder()">
+                                <i class="bi bi-folder2-open me-2"></i>
+                                Select Folder
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mt-3" id="progressContainer" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" id="progressBar" style="width: 0%">
+                                <span id="progressText">Analysis in progress...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Principal -->
+        <div class="dashboard-grid" id="dashboardSection" style="display: none;">
+            <!-- Statistiques Overview -->
+            <div class="stats-overview">
+                <h6 class="section-title">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Vue d'Ensemble
+                </h6>
+                <div class="compact-stats">
+                    <div class="stat-item">
+                        <div class="stat-value text-primary" id="totalFiles">0</div>
+                        <div class="stat-label">Files Analyzed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value text-danger" id="highRiskFiles">0</div>
+                        <div class="stat-label">High Risk Files</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value text-warning" id="avgScore">0</div>
+                        <div class="stat-label">Score Moyen</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value text-info" id="highEntropyFiles">0</div>
+                        <div class="stat-label">Entropie Élevée</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graphiques -->
+            <div class="charts-container">
+                <h6 class="section-title">
+                    <i class="bi bi-pie-chart me-2"></i>
+                    Visual Analysis
+                </h6>
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h6 class="mb-3 text-center">Risk Levels</h6>
+                        <canvas id="levelChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h6 class="mb-3 text-center">Extensions Suspectes</h6>
+                        <canvas id="extensionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="results-container" id="resultsSection" style="display: none;">
+            <div class="section-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Detailed Analysis Results
+                </h5>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-light btn-sm" onclick="sortResults('score')">
+                        <i class="bi bi-sort-numeric-down"></i> Score
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="sortResults('name')">
+                        <i class="bi bi-sort-alpha-down"></i> Nom
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="exportResults()">
+                        <i class="bi bi-download"></i> Export
+                    </button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark sticky-top">
+                        <tr>
+                            <th>Level</th>
+                            <th>File</th>
+                            <th>Score</th>
+                            <th>Taille</th>
+                            <th>Entropie</th>
+                            <th>Extension</th>
+                            <th>Raisons</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <!-- Les résultats seront injectés ici -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Details Modal -->
+    <div class="modal fade" id="fileDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle me-2"></i>
+                        File Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="fileDetailsContent">
+                    <!-- Contenu détaillé du fichier -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Global variables
+        let currentResults = [];
+        let levelChart = null;
+        let extensionChart = null;
+
+        // Level color configuration
+        const levelColors = {
+            'Bad': '#e74c3c',
+            'Suspicious': '#f39c12',
+            'Unknown': '#3498db',
+            'Notable': '#9b59b6',
+            'Good': '#27ae60'
+        };
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            setupUploadZone();
+            setupFileInput();
+        });
+
+        // Upload zone configuration
+        function setupUploadZone() {
+            const uploadZone = document.getElementById('uploadZone');
+            
+            // Remove click on entire zone to avoid conflicts
+            // Buttons now handle their actions individually
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('dragover');
+                
+                const files = Array.from(e.dataTransfer.files);
+                handleFiles(files);
+            });
+        }
+
+        // File and folder input configuration
+        function setupFileInput() {
+            const fileInput = document.getElementById('fileInput');
+            const folderInput = document.getElementById('folderInput');
+            
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) {
+                    handleFiles(files);
+                }
+                // Reset input to allow selecting the same file
+                e.target.value = '';
+            });
+            
+            folderInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) {
+                    handleFiles(files);
+                }
+                // Reset input to allow selecting the same folder
+                e.target.value = '';
+            });
+        }
+
+        // Functions to trigger selection
+        function selectFiles() {
+            document.getElementById('fileInput').click();
+        }
+
+        function selectFolder() {
+            document.getElementById('folderInput').click();
+        }
+
+        // Selected files management
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            const formData = new FormData();
+            files.forEach(file => {
+                formData.append('files', file);
+            });
+
+            uploadAndAnalyze(formData);
+        }
+
+        // File upload and analysis
+        async function uploadAndAnalyze(formData) {
+            showProgress();
+            
+            try {
+                // Verification before sending
+                let hasFiles = false;
+                for (let pair of formData.entries()) {
+                    if (pair[0] === 'files' && pair[1].size > 0) {
+                        hasFiles = true;
+                        break;
+                    }
+                }
+                
+                if (!hasFiles) {
+                    showAlert('Aucun fichier valide sélectionné', 'warning');
+                    hideProgress();
+                    return;
+                }
+                
+                console.log('Envoi des fichiers...');
+                
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Réponse reçue:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('Données:', data);
+
+                if (data.success) {
+                    currentResults = data.results;
+                    displayResults(data.results, data.summary);
+                    showAlert(`Analysis completed! ${data.results.length} files processed.`, 'success');
+                } else {
+                    showAlert(data.error || 'Erreur lors de l\'analyse', 'danger');
+                }
+            } catch (error) {
+                console.error('Erreur complète:', error);
+                showAlert(`Erreur: ${error.message}`, 'danger');
+            } finally {
+                hideProgress();
+            }
+        }
+
+        // Progress bar display
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            const progressBar = document.getElementById('progressBar');
+            let progress = 0;
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = 'Analysis in progress... ' + Math.round(progress) + '%';
+            }, 200);
+
+            // Store interval to be able to stop it
+            progressBar.dataset.interval = interval;
+        }
+
+        // Hide progress bar
+        function hideProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const interval = progressBar.dataset.interval;
+            
+            if (interval) {
+                clearInterval(interval);
+            }
+            
+            progressBar.style.width = '100%';
+            progressBar.textContent = 'Analysis completed!';
+            
+            setTimeout(() => {
+                document.getElementById('progressContainer').style.display = 'none';
+                progressBar.style.width = '0%';
+            }, 1500);
+        }
+
+        // Display results
+        function displayResults(results, summary) {
+            updateStats(summary);
+            updateCharts(summary);
+            updateResultsTable(results);
+            
+            // Show sections with animation
+            document.getElementById('dashboardSection').style.display = 'grid';
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Appearance animation
+            setTimeout(() => {
+                document.getElementById('dashboardSection').style.opacity = '1';
+                document.getElementById('resultsSection').style.opacity = '1';
+            }, 100);
+        }
+
+        // Update statistics
+        function updateStats(summary) {
+            document.getElementById('totalFiles').textContent = summary.total_files || 0;
+            document.getElementById('highRiskFiles').textContent = summary.high_risk_files || 0;
+            document.getElementById('avgScore').textContent = summary.avg_score || 0;
+            document.getElementById('highEntropyFiles').textContent = summary.high_entropy_files || 0;
+        }
+
+        // Update charts
+        function updateCharts(summary) {
+            updateLevelChart(summary.levels_distribution || {});
+            updateExtensionChart(summary.suspicious_extensions || {});
+        }
+
+        // Level distribution chart
+        function updateLevelChart(levelsData) {
+            const ctx = document.getElementById('levelChart').getContext('2d');
+            
+            if (levelChart) {
+                levelChart.destroy();
+            }
+            
+            const labels = Object.keys(levelsData);
+            const data = Object.values(levelsData);
+            const colors = labels.map(level => levelColors[level] || '#6c757d');
+            
+            levelChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Suspicious extensions chart
+        function updateExtensionChart(extensionsData) {
+            const ctx = document.getElementById('extensionChart').getContext('2d');
+            
+            if (extensionChart) {
+                extensionChart.destroy();
+            }
+            
+            const labels = Object.keys(extensionsData).slice(0, 10); // Top 10
+            const data = Object.values(extensionsData).slice(0, 10);
+            
+            extensionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Nombre de fichiers',
+                        data: data,
+                        backgroundColor: '#f39c12',
+                        borderColor: '#e67e22',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update results table
+        function updateResultsTable(results) {
+            const tbody = document.getElementById('resultsTableBody');
+            tbody.innerHTML = '';
+            
+            results.forEach((file, index) => {
+                const row = createFileRow(file, index);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create file row
+        function createFileRow(file, index) {
+            const tr = document.createElement('tr');
+            tr.className = 'file-row';
+            
+            // Size formatting
+            const formatSize = (bytes) => {
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                if (bytes === 0) return '0 B';
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+            };
+            
+            // CSS class for entropy
+            const getEntropyClass = (entropy) => {
+                if (entropy > 7.5) return 'entropy-high';
+                if (entropy > 6) return 'entropy-medium';
+                return 'entropy-low';
+            };
+            
+            tr.innerHTML = `
+                <td>
+                    <span class="level-badge level-${file.level.toLowerCase()}">
+                        ${file.level}
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-file-earmark me-2"></i>
+                        <span title="${file.path}">${file.name}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-${file.score >= 50 ? 'danger' : file.score >= 20 ? 'warning' : 'success'}">
+                        ${file.score}
+                    </span>
+                </td>
+                <td>${formatSize(file.size || 0)}</td>
+                <td>
+                    <span class="${getEntropyClass(file.entropy || 0)}">
+                        ${(file.entropy || 0).toFixed(2)}
+                    </span>
+                </td>
+                <td>
+                    <code>.${file.extension || 'unknown'}</code>
+                </td>
+                <td>
+                    <small class="text-muted">
+                        ${(file.reasons || []).slice(0, 2).join(', ')}
+                        ${(file.reasons || []).length > 2 ? '...' : ''}
+                    </small>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="showFileDetails(${index})">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </td>
+            `;
+            
+            return tr;
+        }
+
+        // Display file details
+        function showFileDetails(index) {
+            const file = currentResults[index];
+            const modal = new bootstrap.Modal(document.getElementById('fileDetailsModal'));
+            const content = document.getElementById('fileDetailsContent');
+            
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-info-circle me-2"></i>Informations Générales</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Nom:</strong></td><td>${file.name}</td></tr>
+                            <tr><td><strong>Chemin:</strong></td><td><small>${file.path}</small></td></tr>
+                            <tr><td><strong>Taille:</strong></td><td>${(file.size || 0).toLocaleString()} bytes</td></tr>
+                            <tr><td><strong>Extension:</strong></td><td>.${file.extension || 'unknown'}</td></tr>
+                            <tr><td><strong>SHA-256:</strong></td><td><small>${file.sha256 || 'N/A'}</small></td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-shield-check me-2"></i>Forensic Analysis</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Level:</strong></td>
+                                <td><span class="level-badge level-${file.level.toLowerCase()}">${file.level}</span></td>
+                            </tr>
+                            <tr><td><strong>Score:</strong></td><td>${file.score}</td></tr>
+                            <tr><td><strong>Entropie:</strong></td><td>${(file.entropy || 0).toFixed(3)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                
+                ${file.timestamps ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6><i class="bi bi-clock me-2"></i>Timestamps</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Créé:</strong></td><td>${new Date(file.timestamps.created).toLocaleString()}</td></tr>
+                            <tr><td><strong>Modifié:</strong></td><td>${new Date(file.timestamps.modified).toLocaleString()}</td></tr>
+                            <tr><td><strong>Accédé:</strong></td><td>${new Date(file.timestamps.accessed).toLocaleString()}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6><i class="bi bi-exclamation-triangle me-2"></i>Raisons de Classification</h6>
+                        <ul class="list-group list-group-flush">
+                            ${(file.reasons || []).map(reason => 
+                                `<li class="list-group-item px-0">${reason}</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            modal.show();
+        }
+
+        // Sort results
+        function sortResults(criteria) {
+            if (criteria === 'score') {
+                currentResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+            } else if (criteria === 'name') {
+                currentResults.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            }
+            
+            updateResultsTable(currentResults);
+        }
+
+        // Export results
+        function exportResults() {
+            const csv = convertToCSV(currentResults);
+            downloadCSV(csv, 'forensic_analysis_results.csv');
+        }
+
+        // CSV conversion
+        function convertToCSV(data) {
+            const headers = ['Name', 'Level', 'Score', 'Size', 'Extension', 'Entropy', 'SHA-256', 'Reasons'];
+            const rows = data.map(file => [
+                file.name || '',
+                file.level || '',
+                file.score || 0,
+                file.size || 0,
+                file.extension || '',
+                (file.entropy || 0).toFixed(3),
+                file.sha256 || '',
+                (file.reasons || []).join('; ')
+            ]);
+            
+            return [headers, ...rows].map(row => 
+                row.map(field => `"${field}"`).join(',')
+            ).join('\n');
+        }
+
+        // CSV Download
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Display alerts
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alertsContainer') || createAlertsContainer();
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            alertsContainer.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Create alerts container
+        function createAlertsContainer() {
+            const container = document.createElement('div');
+            container.id = 'alertsContainer';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            container.style.maxWidth = '400px';
+            
+            document.body.appendChild(container);
+            return container;
+        }
+    </script>
+</body>
+</html>
