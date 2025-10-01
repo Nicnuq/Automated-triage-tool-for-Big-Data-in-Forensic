@@ -99,6 +99,23 @@ http://localhost:5000
    - **Level 1**: Not interesting (green)
 4. **Visualization**: View results in the web interface with charts and statistics
 
+## Testing the System
+
+The project includes a test dataset in the `forensic-triage/` directory containing various types of files designed to demonstrate the system's capabilities:
+
+- `malware.exe` - Suspicious executable file
+- `encrypted.bin` - High-entropy encrypted file
+- `hidden_message.png` - Image with potential steganographic content
+- `high_entropy_file.dat` - File with high entropy data
+- `suspicious_document.txt` - Text file with suspicious keywords
+- `test.txt` - Normal text file for comparison
+
+To test the system:
+1. Launch the application as described above
+2. Upload the entire `forensic-triage/` folder or individual files from it
+3. Observe how different files are classified and scored
+4. Review the detailed analysis results to understand the scoring criteria
+
 ## Project Structure
 
 ```
