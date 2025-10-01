@@ -42,7 +42,7 @@ class Config:
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 
                          'xls', 'xlsx', 'zip', 'rar', 'exe', 'dll', 'bat', 'ps1'}
 
-# Initialisation Flask
+# Flask initialization
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -55,8 +55,8 @@ os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 
 class ForensicScorer:
     """
-    Classe principale pour le scoring forensique
-    Basée sur les critères evidence-based de la recherche académique
+    Main class for forensic scoring
+    Based on evidence-based criteria from academic research
     """
     
     # Suspicious extensions (based on DFRWS research)
@@ -92,8 +92,8 @@ class ForensicScorer:
         Values > 7.5 indicate encryption/compression (academic research)
         
         Args:
-            file_path: Chemin vers le fichier
-            sample_size: Taille de l'échantillon à analyser
+            file_path: Path to the file
+            sample_size: Size of the sample to analyze
             
         Returns:
             float: Shannon entropy (0-8)
@@ -131,7 +131,7 @@ class ForensicScorer:
         Based on Westfeld and Pfitzmann research
         
         Returns:
-            Dict contenant les métriques de détection
+            Dict containing detection metrics
         """
         try:
             file_ext = Path(file_path).suffix.lower().lstrip('.')
@@ -183,11 +183,11 @@ class ForensicScorer:
         """Specific steganography analysis for images"""
         try:
             with Image.open(file_path) as img:
-                # Convertir en RGB si nécessaire
+                # Convert to RGB if necessary
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                 
-                # Convertir en array numpy
+                # Convert to numpy array
                 img_array = np.array(img)
                 
                 results = {
@@ -196,19 +196,19 @@ class ForensicScorer:
                     'techniques_detected': []
                 }
                 
-                # Test Chi-square pour LSB
+                # Chi-square test for LSB
                 chi_square_score = self._chi_square_test(img_array)
-                if chi_square_score > 0.05:  # Seuil de détection
+                if chi_square_score > 0.05:  # Detection threshold
                     results['lsb_anomaly_score'] = min(chi_square_score * 100, 50)
                     results['techniques_detected'].append('LSB_modification')
                 
-                # Analyse de variance d'entropie par blocs
+                # Entropy variance analysis by blocks
                 entropy_var = self._entropy_variance_analysis(img_array)
-                if entropy_var > 0.3:  # Seuil d'anomalie
+                if entropy_var > 0.3:  # Anomaly threshold
                     results['entropy_variance'] = min(entropy_var * 100, 30)
                     results['techniques_detected'].append('entropy_anomaly')
                 
-                # Test de Sample Pair Analysis (version simplifiée)
+                # Sample Pair Analysis test (simplified version)
                 spa_score = self._sample_pair_analysis(img_array)
                 if spa_score > 0.1:
                     results['lsb_anomaly_score'] += min(spa_score * 50, 25)
@@ -224,16 +224,16 @@ class ForensicScorer:
     def _chi_square_test(self, img_array: np.ndarray) -> float:
         """Chi-square test to detect LSB modifications"""
         try:
-            # Analyse uniquement le canal rouge pour simplifier
+            # Analyze only red channel for simplicity
             red_channel = img_array[:, :, 0].flatten()
             
-            # Compter les paires de valeurs consécutives
+            # Count consecutive value pairs
             pairs = {}
             for i in range(0, 256, 2):
                 pairs[i] = np.sum(red_channel == i)
                 pairs[i+1] = np.sum(red_channel == i+1)
             
-            # Calculer le chi-square
+            # Calculate chi-square
             chi_square = 0
             for i in range(0, 256, 2):
                 expected = (pairs[i] + pairs[i+1]) / 2
@@ -241,7 +241,7 @@ class ForensicScorer:
                     chi_square += ((pairs[i] - expected) ** 2) / expected
                     chi_square += ((pairs[i+1] - expected) ** 2) / expected
             
-            # Normaliser le score
+            # Normalize the score
             return min(chi_square / 1000, 1.0)
             
         except Exception:
@@ -254,7 +254,7 @@ class ForensicScorer:
             block_size = 32
             entropies = []
             
-            # Calculer l'entropie pour chaque bloc
+            # Calculate entropy for each block
             for i in range(0, height - block_size, block_size):
                 for j in range(0, width - block_size, block_size):
                     block = img_array[i:i+block_size, j:j+block_size, 0]
@@ -263,7 +263,7 @@ class ForensicScorer:
                     entropy = -np.sum(hist * np.log2(hist + 1e-10))
                     entropies.append(entropy)
             
-            # Calculer la variance
+            # Calculate variance
             if len(entropies) > 1:
                 variance = np.var(entropies)
                 return min(variance / 10, 1.0)
@@ -278,7 +278,7 @@ class ForensicScorer:
         try:
             red_channel = img_array[:, :, 0].flatten()
             
-            # Compter les paires adjacentes
+            # Count adjacent pairs
             same_lsb = 0
             diff_lsb = 0
             
@@ -291,7 +291,7 @@ class ForensicScorer:
                 else:
                     diff_lsb += 1
             
-            # Calculer le ratio (dans une image naturelle, le ratio devrait être équilibré)
+            # Calculate ratio (in natural images, ratio should be balanced)
             total_pairs = same_lsb + diff_lsb
             if total_pairs > 0:
                 ratio = abs(same_lsb - diff_lsb) / total_pairs
@@ -313,7 +313,7 @@ class ForensicScorer:
             
             # 1. Size vs complexity analysis
             entropy = self.calculate_entropy(file_path)
-            if entropy > 7.8 and file_size > 1024:  # Très haute entropie
+            if entropy > 7.8 and file_size > 1024:  # Very high entropy
                 complexity_score = (entropy - 7.5) * 20
                 results['size_complexity_ratio'] = min(complexity_score, 40)
                 results['techniques_detected'].append('high_entropy_payload')
@@ -323,10 +323,10 @@ class ForensicScorer:
             if file_ext in ['jpg', 'jpeg', 'png']:
                 try:
                     with Image.open(file_path) as img:
-                        # Vérifier les commentaires EXIF
+                        # Check EXIF comments
                         if hasattr(img, '_getexif') and img._getexif():
                             exif_data = img._getexif()
-                            if exif_data and len(str(exif_data)) > 1000:  # EXIF très volumineux
+                            if exif_data and len(str(exif_data)) > 1000:  # Very large EXIF
                                 results['metadata_suspicion'] = 20
                                 results['techniques_detected'].append('suspicious_metadata')
                 except Exception:
@@ -334,12 +334,12 @@ class ForensicScorer:
             
             # 3. Suspicious padding test
             with open(file_path, 'rb') as f:
-                f.seek(-min(1024, file_size), 2)  # Lire les derniers 1024 bytes
+                f.seek(-min(1024, file_size), 2)  # Read last 1024 bytes
                 tail_data = f.read()
                 
-                # Chercher des patterns de padding suspects
+                # Look for suspicious padding patterns
                 zero_ratio = tail_data.count(b'\x00') / len(tail_data)
-                if zero_ratio > 0.9 and file_size > 10240:  # Beaucoup de zéros en fin
+                if zero_ratio > 0.9 and file_size > 10240:  # Many zeros at end
                     results['size_complexity_ratio'] += 15
                     results['techniques_detected'].append('suspicious_padding')
             
@@ -355,7 +355,7 @@ class ForensicScorer:
         Based on Meridian Discovery research
         
         Returns:
-            Dict contenant les métriques temporelles
+            Dict containing temporal metrics
         """
         try:
             stat = os.stat(file_path)
@@ -364,14 +364,14 @@ class ForensicScorer:
             modified = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
             accessed = datetime.fromtimestamp(stat.st_atime, tz=timezone.utc)
             
-            # Détection d'anomalies temporelles
+            # Temporal anomaly detection
             anomalies = []
             
-            # Modification antérieure à la création (copie de fichier)
+            # Modification before creation (file copy)
             if modified < created:
                 anomalies.append("modification_before_creation")
             
-            # Timestamps arrondis (manipulation possible)
+            # Rounded timestamps (possible manipulation)
             if modified.microsecond == 0 and created.microsecond == 0:
                 anomalies.append("rounded_timestamps")
             
@@ -399,7 +399,7 @@ class ForensicScorer:
             file_ext = Path(file_path).suffix.lower().lstrip('.')
             mime_type = self.mime.from_file(file_path)
             
-            # Mapping extension -> MIME attendu (étendu)
+            # Extension -> expected MIME mapping (extended)
             expected_mimes = {
                 'txt': ['text/plain', 'text/x-ascii'],
                 'pdf': ['application/pdf'],
@@ -434,7 +434,7 @@ class ForensicScorer:
         5-level system: Bad (4), Suspicious (3), Unknown (2), Good (1), Notable (0)
         
         Returns:
-            Dict avec score, niveau et détails de l'analyse
+            Dict with score, level and analysis details
         """
         try:
             file_info = {
@@ -478,7 +478,7 @@ class ForensicScorer:
             # 5. Entropy analysis (encryption indicator)
             entropy = self.calculate_entropy(file_path)
             file_info['entropy'] = round(entropy, 2)
-            if entropy > 7.5:  # Seuil basé sur la recherche académique
+            if entropy > 7.5:  # Threshold based on academic research
                 file_info['score'] += 35
                 file_info['reasons'].append(f"High entropy ({entropy:.2f}) - Possible encryption")
             
@@ -519,7 +519,7 @@ class ForensicScorer:
             # 9. Score limitation to 100 points maximum
             file_info['score'] = min(file_info['score'], 100)
             
-            # 10. Attribution du niveau final
+            # 10. Final level assignment
             if file_info['score'] >= 80:
                 file_info['level'] = 'Bad'
                 file_info['level_num'] = 4
@@ -551,7 +551,7 @@ class ForensicScorer:
             }
 
 class ForensicTriageSystem:
-    """Système principal de triage forensique"""
+    """Main forensic triage system"""
     
     def __init__(self):
         self.scorer = ForensicScorer()
@@ -562,11 +562,11 @@ class ForensicTriageSystem:
         Recursive directory analysis
         
         Args:
-            directory_path: Chemin du répertoire à analyser
-            max_files: Limite du nombre de fichiers (protection)
-            
+            directory_path: Path to the directory to analyze
+            max_files: Limit of number of files (protection)
+
         Returns:
-            Liste des résultats d'analyse
+            List of analysis results
         """
         results = []
         file_count = 0
@@ -590,7 +590,7 @@ class ForensicTriageSystem:
                 if file_count >= max_files:
                     break
             
-            # Tri par score décroissant
+            # Sort by descending score
             results.sort(key=lambda x: x.get('score', 0), reverse=True)
             
             logger.info(f"Analysis completed: {len(results)} files processed")
@@ -623,7 +623,7 @@ class ForensicTriageSystem:
 # Instance globale
 triage_system = ForensicTriageSystem()
 
-# Routes Flask
+# Flask routes
 @app.route('/')
 def index():
     """Homepage with upload interface"""
@@ -637,7 +637,7 @@ def upload_files():
         logger.info(f"Form data: {request.form}")
         logger.info(f"Files: {request.files}")
         
-        # Vérification plus robuste des fichiers
+        # More robust file verification
         if not request.files:
             return jsonify({'error': 'No files in request'}), 400
             
@@ -645,27 +645,27 @@ def upload_files():
         if not files:
             return jsonify({'error': 'Empty file list'}), 400
         
-        # Filtrer les fichiers vides et valides
+        # Filter empty and valid files
         valid_files = []
         for f in files:
             if f and f.filename and f.filename.strip():
-                # Vérifier que le fichier a du contenu
-                f.seek(0, 2)  # Aller à la fin du fichier
+                # Check that file has content
+                f.seek(0, 2)  # Go to end of file
                 file_size = f.tell()
-                f.seek(0)  # Revenir au début
+                f.seek(0)  # Return to beginning
                 
-                if file_size > 0 or f.filename.strip():  # Accepter même les fichiers vides s'ils ont un nom
+                if file_size > 0 or f.filename.strip():  # Accept even empty files if they have a name
                     valid_files.append(f)
                     
         if not valid_files:
             return jsonify({'error': 'No valid files selected'}), 400
         
-        # Création d'un dossier unique pour cette analyse
+        # Create unique folder for this analysis
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         analysis_dir = os.path.join(Config.UPLOAD_FOLDER, f'analysis_{timestamp}')
         os.makedirs(analysis_dir, exist_ok=True)
         
-        # Sauvegarde des fichiers avec gestion des dossiers
+        # Save files with folder management
         saved_files = []
         for file in valid_files:
             try:
@@ -675,9 +675,9 @@ def upload_files():
                 if not filename:
                     filename = f"uploaded_file_{len(saved_files)}"
                 
-                # Gérer les chemins de dossiers (pour webkitdirectory)
+                # Handle folder paths (for webkitdirectory)
                 if '/' in original_filename or '\\' in original_filename:
-                    # Créer la structure de dossiers
+                    # Create folder structure
                     relative_path = original_filename.replace('\\', '/')
                     file_dir = os.path.dirname(relative_path)
                     filename = os.path.basename(relative_path)
@@ -701,7 +701,7 @@ def upload_files():
         if not saved_files:
             return jsonify({'error': 'No files could be saved'}), 400
         
-        # Analyse forensique
+        # Forensic analysis
         results = triage_system.analyze_directory(analysis_dir)
         summary = triage_system.generate_summary(results)
 
